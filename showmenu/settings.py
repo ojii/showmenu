@@ -106,7 +106,7 @@ CMS_TEMPLATES = [
     ('dummy.html', 'dummy.html')
 ]
 
-SITE_ID = 0
+SITE_ID = 1
 
 BOWER_COMPONENTS_ROOT = os.path.join(BASE_DIR, 'bower')
 
