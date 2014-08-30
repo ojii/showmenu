@@ -1,0 +1,14 @@
+{% load menu_tags %}[
+  {% for node in children %}
+  {
+    "id": {{ node.id }},
+    "url": "{{ node.get_absolute_url }}",
+    "title": "{{ node.get_menu_title }}",
+    "selected": {% if node.selected %}true{% else %}false{% endif %},
+    "ancestor": {% if node.ancestor %}true{% else %}false{% endif %},
+    "sibling": {% if node.sibling %}true{% else %}false{% endif %},
+    "descendant": {% if node.descendant %}true{% else %}false{% endif %},
+    "items": {% show_menu from_level to_level extra_inactive extra_active "nodes.json" "" "" node %}
+  }{% if not forloop.last %},{% endif %}
+  {% endfor %}
+]

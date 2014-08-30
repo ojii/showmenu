@@ -1,0 +1,85 @@
+{% load static %}
+<html>
+<head>
+  <title>Show Menu</title>
+  <link rel="stylesheet"
+        href="{% static 'angular-ui-tree/dist/angular-ui-tree.min.css' %}">
+  <link rel="stylesheet"
+        href="{% static 'angular-ui-tree/demo/css/demo.css' %}">
+  <link rel="stylesheet"
+        href="{% static 'bootstrap/dist/css/bootstrap.min.css' %}">
+</head>
+<body ng-app="showmenu">
+<div class="container">
+  <h1>Show Menu</h1>
+
+  <div class="row">
+    <div class="col-md-12">
+      <div class="row" ng-controller="MainCtrl">
+        {% verbatim %}
+        <div class="col-lg-6">
+          <input type="number" ng-model="from_level">
+          <input type="number" ng-model="to_level">
+          <input type="number" ng-model="extra_inactive">
+          <input type="number" ng-model="extra_active">
+          <button ng-click="request_new_menu()" ng-disabled="refreshing">Build</button>
+          <script type="text/ng-template" id="items_renderer.html">
+            <div ui-tree-handle>
+              <a class="btn btn-success btn-xs" data-nodrag
+                 ng-click="toggle(this)"><span class="glyphicon"
+                                               ng-class="{'glyphicon-chevron-right': collapsed, 'glyphicon-chevron-down': !collapsed}"></span></a>
+              {{item.title}}
+              <a class="pull-right btn btn-danger btn-xs" data-nodrag
+                 ng-click="remove(this)"><span
+                class="glyphicon glyphicon-remove"></span></a>
+              <a class="pull-right btn btn-primary btn-xs" data-nodrag
+                 ng-click="newSubItem(this)" style="margin-right: 8px;"><span
+                class="glyphicon glyphicon-plus"></span></a>
+            </div>
+            <ol ui-tree-nodes="menu_options" ng-model="item.items"
+                ng-class="{hidden: collapsed}">
+              <li ng-repeat="item in item.items" ui-tree-node
+                  ng-include="'items_renderer.html'">
+              </li>
+            </ol>
+          </script>
+          <script type="text/ng-template" id="menu_renderer.html">
+            <div ui-tree-handle>
+              <a class="btn btn-success btn-xs" data-nodrag
+                 ng-click="toggle(this)"><span class="glyphicon"
+                                               ng-class="{'glyphicon-chevron-right': collapsed, 'glyphicon-chevron-down': !collapsed}"></span></a>
+              {{item.title}} ({{item.url}})
+            </div>
+            <ol ui-tree-nodes="options" ng-model="item.items"
+                ng-class="{hidden: collapsed}" data-nodrop="true">
+              <li ng-repeat="item in item.items" ui-tree-node
+                  ng-include="'menu_renderer.html'">
+              </li>
+            </ol>
+          </script>
+          <div ui-tree="options" data-spacing="20">
+            <ol ui-tree-nodes ng-model="list">
+              <li ng-repeat="item in list" ui-tree-node
+                  ng-include="'items_renderer.html'"></li>
+            </ol>
+          </div>
+          <hr>
+          <div ui-tree="menu_options" data-empty-place-holder-enabled="false" data-drag-enabled="false" data-spacing="20">
+            <ol ui-tree-nodes ng-model="menu" data-nodrop="true">
+              <li ng-repeat="item in menu" ui-tree-node
+                  ng-include="'menu_renderer.html'"></li>
+            </ol>
+          </div>
+        </div>
+      {% endverbatim %}
+    </div>
+  </div>
+</div>
+</div>
+<script type="text/javascript"
+        src='{% static 'angular/angular.js' %}'></script>
+<script type="text/javascript"
+        src='{% static 'angular-ui-tree/dist/angular-ui-tree.js' %}'></script>
+<script type="text/javascript" src='{% static 'showmenu.js' %}'></script>
+</body>
+</html>
