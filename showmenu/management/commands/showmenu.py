@@ -1,7 +1,7 @@
 import json
 import sys
 from cms.api import create_page
-from cms.models import Page
+from cms.models import Page, Title
 from django.contrib.auth.models import AnonymousUser
 from django.core.management import call_command
 from django.core.management.base import NoArgsCommand
@@ -20,6 +20,10 @@ def _create_pages(pages, parent):
             in_navigation=True,
         )
         _create_pages(data['items'], page)
+
+
+def get_page_by_node(node):
+    return Title.objects.public().get(title=node['title']).page
 
 
 class Command(NoArgsCommand):
@@ -64,6 +68,34 @@ class Command(NoArgsCommand):
     def handle_set_tree(self, tree):
         Page.objects.all().delete()
         _create_pages(tree, None)
+        self.render_menu()
+
+    def handle_remove_page(self, page):
+        get_page_by_node(page).delete()
+        self.render_menu()
+
+    def handle_add_page(self, page, parent):
+        if parent:
+            parent = get_page_by_node(parent)
+        else:
+            parent = None
+        create_page(
+            title=page['title'],
+            template='dummy.html',
+            language='en',
+            parent=parent,
+            published=True,
+            in_navigation=True
+        )
+        self.render_menu()
+
+    def handle_move_page(self, page, target, position):
+        page = get_page_by_node(page)
+        if target:
+            target = get_page_by_node(target)
+        else:
+            target = None
+        page.move(target, position)
         self.render_menu()
 
     def handle_stop(self):

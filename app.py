@@ -57,10 +57,15 @@ class HttpServer(ServerHttpProtocol):
     def read_result(self):
         logging.info('Reading Result')
         length = ''
+        guard = 0
+        # no clue why this fails sometimes, but this workaround seems to work
         while not length:
             length_bytes = yield from self.django.stdout.readline()
             length = length_bytes.decode('utf-8').strip()
             logging.info('Length: {!r}'.format(length))
+            guard += 1
+            if guard > 10:
+                raise Exception("Something bad happened")
         payload_length = int(length)
         payload = yield from self.django.stdout.read(payload_length)
         return payload

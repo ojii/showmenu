@@ -62,15 +62,15 @@
     $scope.menu = [];
     $scope.selectedItem = {};
     $scope.options = {
-      'dropped': function(){
+      'dropped': function(event){
         socket.send_command('set_tree', [$scope.list]);
       }
     };
     $scope.menu_options = {};
 
-    $scope.remove = function(scope) {
+    $scope.remove_node = function(scope) {
+      socket.send_command('remove_page', [scope.$nodeScope.$modelValue])
       scope.remove();
-      socket.send_command('set_tree', [$scope.list]);
     };
 
     $scope.toggle = function(scope) {
