@@ -20,7 +20,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 SECRET_KEY = '&8w*pihjlu!9k(18au(wbze5$_80jg$af1chg9k6sz$f%&a-t$'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-TEMPLATE_DEBUG = DEBUG = True
+TEMPLATE_DEBUG = DEBUG = False
 
 ALLOWED_HOSTS = []
 
@@ -121,3 +121,5 @@ BOWER_INSTALLED_APPS = [
     'angular-ui-tree',
     'bootstrap',
 ]
+
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')

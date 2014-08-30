@@ -1,6 +1,7 @@
 import json
 import sys
 from cms.api import create_page
+from cms.models import Page
 from django.contrib.auth.models import AnonymousUser
 from django.core.management import call_command
 from django.core.management.base import NoArgsCommand
@@ -61,6 +62,7 @@ class Command(NoArgsCommand):
         self.write(data)
 
     def handle_set_tree(self, tree):
+        Page.objects.all().delete()
         _create_pages(tree, None)
         self.render_menu()
 

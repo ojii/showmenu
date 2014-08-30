@@ -2,6 +2,26 @@
   'use strict';
 
   angular.module('showmenu', ['ui.tree']).controller('MainCtrl', function($scope) {
+    var socket = new WebSocket('ws://' + location.host);
+
+    socket.onmessage = function(event){
+      $scope.lock = true;
+      $scope.menu = JSON.parse(event.data);
+      $scope.$apply();
+      $scope.lock = false;
+    };
+
+    socket.send_command = function(command, args){
+      if (socket.readyState == 1 && !$scope.lock){
+        socket.send(JSON.stringify([command, args]));
+      }
+    };
+
+    socket.onopen = function(){
+      socket.send_command('set_tree', [$scope.list]);
+    };
+
+    $scope.lock = false;
     $scope.from_level = 0;
     $scope.to_level = 100;
     $scope.extra_inactive = 100;
@@ -40,15 +60,17 @@
       "items": []
     }];
     $scope.menu = [];
-
     $scope.selectedItem = {};
-
-    $scope.options = {};
+    $scope.options = {
+      'dropped': function(){
+        socket.send_command('set_tree', [$scope.list]);
+      }
+    };
     $scope.menu_options = {};
-    $scope.refreshing = false;
 
     $scope.remove = function(scope) {
       scope.remove();
+      socket.send_command('set_tree', [$scope.list]);
     };
 
     $scope.toggle = function(scope) {
@@ -62,28 +84,20 @@
         title: nodeData.title + '.' + (nodeData.items.length + 1),
         items: []
       });
+      socket.send_command('set_tree', [$scope.list]);
     };
 
-    $scope.request_new_menu = function(){
-      $scope.refreshing = true;
-      var request = new XMLHttpRequest();
-      var data = {
-        'tree': $scope.list,
-        'from': $scope.from_level,
-        'to': $scope.to_level,
-        'extra_inactive': $scope.extra_inactive,
-        'extra_active': $scope.extra_active
-      };
-      request.onreadystatechange = function () {
-        if (request.readyState === 4 && request.status === 200) {
-          $scope.menu = JSON.parse(request.responseText);
-          $scope.$apply();
-          $scope.refreshing = false;
-        }
-      };
-      request.open('POST', '/menu/');
-      request.setRequestHeader('Content-Type', 'application/json');
-      request.send(JSON.stringify(data));
-    };
+    $scope.$watch('from_level', function(){
+      socket.send_command('set_argument', ['from_level', $scope.from_level]);
+    });
+    $scope.$watch('to_level', function(){
+      socket.send_command('set_argument', ['to_level', $scope.to_level]);
+    });
+    $scope.$watch('extra_inactive', function(){
+      socket.send_command('set_argument', ['extra_inactive', $scope.extra_inactive]);
+    });
+    $scope.$watch('extra_active', function(){
+      socket.send_command('set_argument', ['extra_active', $scope.extra_active]);
+    });
   });
 })();
