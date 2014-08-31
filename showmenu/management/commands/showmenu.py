@@ -10,6 +10,8 @@ from django.core.management import call_command
 from django.core.management.base import NoArgsCommand
 from django.template.loader import render_to_string
 from django.test import RequestFactory
+from raven.base import Client
+client = Client()
 
 
 def _create_pages(pages, parent):
