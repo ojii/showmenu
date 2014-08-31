@@ -16,10 +16,10 @@
     <div class="col-md-12">
       <div class="row" ng-controller="MainCtrl">
         <div class="col-lg-6">
-          <input type="number" ng-model="from_level">
-          <input type="number" ng-model="to_level">
-          <input type="number" ng-model="extra_inactive">
-          <input type="number" ng-model="extra_active">
+          <input type="number" min="0" max="100" ng-model="from_level">
+          <input type="number" min="0" max="100" ng-model="to_level">
+          <input type="number" min="0" max="100" ng-model="extra_inactive">
+          <input type="number" min="0" max="100" ng-model="extra_active">
           <script type="text/ng-template" id="items_renderer.html">
             <div ui-tree-handle>
               <a class="btn btn-success btn-xs" data-nodrag
