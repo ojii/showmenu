@@ -2,6 +2,7 @@ Django==1.6.6
 South==1.0
 aiohttp==0.9.0
 certifi==14.05.14
+dictdiffer==0.0.4
 django-bower==5.0.1
 django-classy-tags==0.5.1
 django-cms==3.0.5

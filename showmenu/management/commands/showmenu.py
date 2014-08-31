@@ -2,6 +2,8 @@ import json
 import sys
 from cms.api import create_page
 from cms.models import Page, Title
+import dictdiffer
+from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.core.management import call_command
 from django.core.management.base import NoArgsCommand
@@ -14,7 +16,7 @@ def _create_pages(pages, parent):
         page = create_page(
             title=data['title'],
             template='dummy.html',
-            language='en',
+            language=settings.LANGUAGE_CODE,
             parent=parent,
             published=True,
             in_navigation=True,
@@ -44,6 +46,7 @@ class Command(NoArgsCommand):
         self.request.user = AnonymousUser()
         self.stdout = self.stdout._out
         self.run = True
+        self.tree = None
 
         while self.run:
             header = sys.stdin.readline()
@@ -66,36 +69,95 @@ class Command(NoArgsCommand):
         self.write(data)
 
     def handle_set_tree(self, tree):
-        Page.objects.all().delete()
-        _create_pages(tree, None)
-        self.render_menu()
+        def _key_index_to_page(baseqs, key, *extra):
+            indices = list(
+                map(int, filter(bool, key.split('.')[::2]))
+            ) + list(extra)
+            queryset = baseqs.filter(level=0)
+            page = None
+            while indices:
+                page = queryset[indices.pop(0)]
+                if indices:
+                    queryset = page.get_children()
+            if page is None:
+                page = queryset[0]
+            return page
 
-    def handle_remove_page(self, page):
-        get_page_by_node(page).delete()
-        self.render_menu()
+        def _add(key, index, data):
+            page = _key_index_to_page(Page.objects.public(), key)
+            if index == 0:
+                create_page(
+                    title=data['title'],
+                    template='dummy.html',
+                    language=settings.LANGUAGE_CODE,
+                    parent=page,
+                    position='first-child',
+                    published=True,
+                    in_navigation=True,
+                )
+            else:
+                left = page.get_children()[index - 1]
+                child = create_page(
+                    title=data['title'],
+                    template='dummy.html',
+                    language=settings.LANGUAGE_CODE,
+                    parent=page,
+                    in_navigation=True,
+                )
+                child.move_to(left, 'right')
+                child.publish(settings.LANGUAGE_CODE)
 
-    def handle_add_page(self, page, parent):
-        if parent:
-            parent = get_page_by_node(parent)
+        def add(key, items):
+            for index, data in items:
+                _add(key, index, data)
+
+        def _remove(key, index):
+            page = _key_index_to_page(Page.objects.public(), key, index)
+            page.delete()
+
+        def remove(key, items):
+            for index, _ in items:
+                _remove(key, index)
+
+        def change(key, value):
+            field = key.split('.')[-1]
+            if field != 'title':
+                return
+            page = _key_index_to_page(Page.objects.drafts(), key)
+            page.title_set.filter(
+                language=settings.LANGUAGE_CODE
+            ).update(
+                title=value[1]
+            )
+            page.publish(settings.LANGUAGE_CODE)
+
+        actions = {
+            'add': add,
+            'remove': remove,
+            'change': change,
+        }
+        if self.tree is None:
+            sys.stderr.write('No tree to diff against\n')
+            Page.objects.all().delete()
+            _create_pages(tree, None)
         else:
-            parent = None
-        create_page(
-            title=page['title'],
-            template='dummy.html',
-            language='en',
-            parent=parent,
-            published=True,
-            in_navigation=True
-        )
-        self.render_menu()
-
-    def handle_move_page(self, page, target, position):
-        page = get_page_by_node(page)
-        if target:
-            target = get_page_by_node(target)
-        else:
-            target = None
-        page.move(target, position)
+            diff = dictdiffer.diff(self.tree, tree)
+            sys.stderr.write('Diff: {}\n'.format(
+                list(dictdiffer.diff(self.tree, tree))
+            ))
+            '''
+            [
+                ('change', '2.title', ('3. unicorn-zapper', '4. romantic-transclusion')),
+                ('change', '2.id', (3, 4)),
+                ('change', '2.$$hashKey', ('009', '00A')),
+                ('change', '3.title', ('4. romantic-transclusion', '3. unicorn-zapper')),
+                ('change', '3.id', (4, 3)),
+                ('change', '3.$$hashKey', ('00A', '009'))]
+            '''
+            for action, keystring, value in diff:
+                actions[action](keystring, value)
+        self.tree = tree
+        sys.stderr.flush()
         self.render_menu()
 
     def handle_stop(self):

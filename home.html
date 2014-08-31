@@ -61,6 +61,9 @@
             </ol>
           </div>
           <hr>
+          <div ng-show="!menu.length">
+            Connecting to server, please wait...
+          </div>
           <div ui-tree="menu_options" data-empty-place-holder-enabled="false" data-drag-enabled="false" data-spacing="20">
             <ol ui-tree-nodes ng-model="menu" data-nodrop="true">
               <li ng-repeat="item in menu track by item.id" ui-tree-node

@@ -38,13 +38,17 @@ class HttpServer(ServerHttpProtocol):
 
     @asyncio.coroutine
     def start(self):
-        self.django = yield from asyncio.create_subprocess_exec(
+        self.django = yield from self.start_child_process()
+        yield from super().start()
+
+    @asyncio.coroutine
+    def start_child_process(self):
+        return asyncio.create_subprocess_exec(
             'python', 'manage.py', 'showmenu', '--traceback',
             stdout=subprocess.PIPE,
             stdin=subprocess.PIPE,
             stderr=sys.stderr,
         )
-        yield from super().start()
 
     def send_command(self, command, *args):
         payload = json.dumps(args)
@@ -60,9 +64,13 @@ class HttpServer(ServerHttpProtocol):
         guard = 0
         # no clue why this fails sometimes, but this workaround seems to work
         while not length:
-            length_bytes = yield from self.django.stdout.readline()
-            length = length_bytes.decode('utf-8').strip()
-            logging.info('Length: {!r}'.format(length))
+            if self.django.returncode is not None:
+                logging.info('Child process died, restarting...')
+                self.django = yield from self.start_child_process()
+            else:
+                length_bytes = yield from self.django.stdout.readline()
+                length = length_bytes.decode('utf-8').strip()
+                logging.info('Length: {!r}'.format(length))
             guard += 1
             if guard > 10:
                 raise Exception("Something bad happened")

@@ -40,16 +40,17 @@
           "id": 211,
           "title": "2.1.1. spooky-giraffe",
           "items": []
-        }, {
-          "id": 212,
-          "title": "2.1.2. bubble-burst",
-          "items": []
-        }]
+        }
+        ]
       }, {
         "id": 22,
         "title": "2.2. barehand-atomsplitting",
         "items": []
-      }]
+      },{
+          "id": 212,
+          "title": "2.1.2. bubble-burst",
+          "items": []
+        }]
     }, {
       "id": 3,
       "title": "3. unicorn-zapper",
@@ -69,8 +70,8 @@
     $scope.menu_options = {};
 
     $scope.remove_node = function(scope) {
-      socket.send_command('remove_page', [scope.$nodeScope.$modelValue])
       scope.remove();
+      socket.send_command('set_tree', [$scope.list])
     };
 
     $scope.toggle = function(scope) {
