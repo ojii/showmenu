@@ -91,10 +91,10 @@ class HttpServer(ServerHttpProtocol):
         path = message.path
 
         if path in self.app.static_files:
-            return self._serve_static(path)
+            return self._serve_static(message, path)
 
         elif path == '/':
-            return self._index()
+            return self._index(message)
         else:
             raise HttpErrorException(404)
 
@@ -115,7 +115,7 @@ class HttpServer(ServerHttpProtocol):
             try:
                 msg = yield from dataqueue.read()
             except EofStream:
-                # client droped connection
+                # client dropped connection
                 break
             if msg.tp == websocket.MSG_PING:
                 writer.pong()
@@ -131,12 +131,22 @@ class HttpServer(ServerHttpProtocol):
         logging.info("WS Disconnect")
         self.send_command('stop')
 
-    def _send_headers(self, length, content_type='text/html', **extra):
+    def _send_headers(self, message, length, content_type='text/html'):
         response = Response(self.writer, 200)
         response.add_header('Content-type', content_type)
         response.add_header('Content-length', str(length))
-        for key, value in extra.items():
-            response.add_header(key, value)
+        response.add_header('Transfer-Encoding', 'chunked')
+
+        # content encoding
+        accept_encoding = message.headers.get('accept-encoding', '').lower()
+        if 'deflate' in accept_encoding:
+            response.add_header('Content-Encoding', 'deflate')
+            response.add_compression_filter('deflate')
+        elif 'gzip' in accept_encoding:
+            response.add_header('Content-Encoding', 'gzip')
+            response.add_compression_filter('gzip')
+
+        response.add_chunking_filter(1025)
         response.send_headers()
         return response
 
@@ -145,9 +155,9 @@ class HttpServer(ServerHttpProtocol):
         if response.keep_alive():
             self.keep_alive(True)
 
-    def _serve_static(self, path):
+    def _serve_static(self, message, path):
         fs_path, (length, content_type) = self.app.static_files[path]
-        response = self._send_headers(length, content_type)
+        response = self._send_headers(message, length, content_type)
         try:
             with open(fs_path, 'rb') as fp:
                 chunk = fp.read(8196)
@@ -158,12 +168,11 @@ class HttpServer(ServerHttpProtocol):
             response.write(b'Cannot open')
         self._finish_response(response)
 
-    def _index(self):
-        self._send(self.app.index_page_length, self.app.index_page_html)
-
-    def _send(self, length, content, content_type='text/html'):
-        response = self._send_headers(length, content_type)
-        response.write(content)
+    def _index(self, message):
+        response = self._send_headers(
+            message, self.app.index_page_length, 'text/html'
+        )
+        response.write(self.app.index_page_html)
         self._finish_response(response)
 
 
