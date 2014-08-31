@@ -40,6 +40,7 @@ INSTALLED_APPS = (
     'sekizai',
     'djangocms_admin_style',
     'djangobower',
+    'raven.contrib.django.raven_compat',
     'showmenu',
 )
 

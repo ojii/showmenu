@@ -190,4 +190,6 @@ def main():
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
+    from raven.base import Client
+    client = Client()
     main()

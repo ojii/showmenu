@@ -12,5 +12,6 @@ djangocms-admin-style==0.2.2
 gunicorn==19.1.1
 html5lib==0.999
 ipython==2.2.0
+raven==5.0.0
 requests==2.4.0
 six==1.7.3
