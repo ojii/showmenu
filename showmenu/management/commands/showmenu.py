@@ -84,7 +84,7 @@ class Command(NoArgsCommand):
             return page
 
         def _add(key, index, data):
-            page = _key_index_to_page(Page.objects.public(), key)
+            page = _key_index_to_page(Page.objects.drafts(), key)
             if index == 0:
                 create_page(
                     title=data['title'],
@@ -104,7 +104,7 @@ class Command(NoArgsCommand):
                     parent=page,
                     in_navigation=True,
                 )
-                child.move_to(left, 'right')
+                child.move_page(left, 'right')
                 child.publish(settings.LANGUAGE_CODE)
 
         def add(key, items):
