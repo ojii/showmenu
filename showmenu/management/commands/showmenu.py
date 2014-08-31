@@ -110,7 +110,8 @@ class Command(NoArgsCommand):
 
         def add(key, items):
             for index, data in items:
-                _add(key, index, data)
+                if isinstance(index, int):
+                    _add(key, index, data)
 
         def _remove(key, index):
             page = _key_index_to_page(Page.objects.public(), key, index)

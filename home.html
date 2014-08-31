@@ -45,7 +45,7 @@
               <a class="btn btn-success btn-xs" data-nodrag
                  ng-click="toggle(this)"><span class="glyphicon"
                                                ng-class="{'glyphicon-chevron-right': collapsed, 'glyphicon-chevron-down': !collapsed}"></span></a>
-              {{item.title}} ({{item.url}})
+              {{item.title}}
             </div>
             <ol ui-tree-nodes="options" ng-model="item.items"
                 ng-class="{hidden: collapsed}" data-nodrop="true">
