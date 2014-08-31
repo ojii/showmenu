@@ -48,6 +48,7 @@ class HttpServer(ServerHttpProtocol):
             stdout=subprocess.PIPE,
             stdin=subprocess.PIPE,
             stderr=sys.stderr,
+            env=os.environ,
         )
 
     def send_command(self, command, *args):
