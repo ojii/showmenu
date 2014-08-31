@@ -19,15 +19,13 @@ def _build_static_files(directory):
         if os.path.isdir(path):
             yield from _build_static_files(path)
         else:
-            with open(path, 'rb') as fobj:
-                content = fobj.read()
-                length = len(content)
-                content_type = mimetypes.guess_type(path)[0]
-                if content_type:
-                    content_type += '; charset=utf-8'
-                else:
-                    content_type = 'application/octet-stream'
-            yield path, (length, content, content_type)
+            length = os.stat(path).st_size
+            content_type = mimetypes.guess_type(path)[0]
+            if content_type:
+                content_type += '; charset=utf-8'
+            else:
+                content_type = 'application/octet-stream'
+            yield path, (length, content_type)
 
 
 class HttpServer(ServerHttpProtocol):
@@ -133,21 +131,40 @@ class HttpServer(ServerHttpProtocol):
         logging.info("WS Disconnect")
         self.send_command('stop')
 
+    def _send_headers(self, length, content_type='text/html', **extra):
+        response = Response(self.writer, 200)
+        response.add_header('Content-type', content_type)
+        response.add_header('Content-length', str(length))
+        for key, value in extra.items():
+            response.add_header(key, value)
+        response.send_headers()
+        return response
+
+    def _finish_response(self, response):
+        response.write_eof()
+        if response.keep_alive():
+            self.keep_alive(True)
+
     def _serve_static(self, path):
-        self._send(*self.app.static_files[path])
+        fs_path, (length, content_type) = self.app.static_files[path]
+        response = self._send_headers(length, content_type)
+        try:
+            with open(fs_path, 'rb') as fp:
+                chunk = fp.read(8196)
+                while chunk:
+                    response.write(chunk)
+                    chunk = fp.read(8196)
+        except OSError:
+            response.write(b'Cannot open')
+        self._finish_response(response)
 
     def _index(self):
         self._send(self.app.index_page_length, self.app.index_page_html)
 
     def _send(self, length, content, content_type='text/html'):
-        response = Response(self.writer, 200)
-        response.add_header('Content-type', content_type)
-        response.add_header('Content-length', str(length))
-        response.send_headers()
+        response = self._send_headers(length, content_type)
         response.write(content)
-        response.write_eof()
-        if response.keep_alive():
-            self.keep_alive(True)
+        self._finish_response(response)
 
 
 class App(object):
@@ -161,7 +178,7 @@ class App(object):
         self.static_files = {}
         for path, data in _build_static_files(static_dir):
             rel_path = os.path.relpath(path, static_dir)
-            self.static_files['/static/{}'.format(rel_path)] = data
+            self.static_files['/static/{}'.format(rel_path)] = (path, data)
 
     def run(self, host, port):
         self.event_loop.run_until_complete(
