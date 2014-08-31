@@ -1,4 +1,5 @@
 import json
+from pprint import pprint
 import sys
 from cms.api import create_page
 from cms.models import Page, Title
@@ -142,18 +143,7 @@ class Command(NoArgsCommand):
             _create_pages(tree, None)
         else:
             diff = dictdiffer.diff(self.tree, tree)
-            sys.stderr.write('Diff: {}\n'.format(
-                list(dictdiffer.diff(self.tree, tree))
-            ))
-            '''
-            [
-                ('change', '2.title', ('3. unicorn-zapper', '4. romantic-transclusion')),
-                ('change', '2.id', (3, 4)),
-                ('change', '2.$$hashKey', ('009', '00A')),
-                ('change', '3.title', ('4. romantic-transclusion', '3. unicorn-zapper')),
-                ('change', '3.id', (4, 3)),
-                ('change', '3.$$hashKey', ('00A', '009'))]
-            '''
+            pprint(list(dictdiffer.diff(self.tree, tree)), stream=sys.stderr)
             for action, keystring, value in diff:
                 actions[action](keystring, value)
         self.tree = tree
